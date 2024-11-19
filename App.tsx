@@ -4,10 +4,11 @@
  *
  * @format
  */
-
+import 'react-native-gesture-handler'
 import React from 'react';
 import type {PropsWithChildren} from 'react';
 import {
+  LogBox,
   SafeAreaView,
   ScrollView,
   StatusBar,
@@ -24,7 +25,14 @@ import {
   LearnMoreLinks,
   ReloadInstructions,
 } from 'react-native/Libraries/NewAppScreen';
+import {NavigationContainer} from '@react-navigation/native';
+import {createNativeStackNavigator} from '@react-navigation/native-stack';
+import EntryScreen from './src/screens/EntryScreen';
+import HomeScreen from './src/screens/HomeScreen';
+import ChatScreen from './src/screens/ChatScreen';
 
+const Stack = createNativeStackNavigator();
+LogBox.ignoreAllLogs();
 type SectionProps = PropsWithChildren<{
   title: string;
 }>;
@@ -54,7 +62,7 @@ function Section({children, title}: SectionProps): React.JSX.Element {
     </View>
   );
 }
-
+ 
 function App(): React.JSX.Element {
   const isDarkMode = useColorScheme() === 'dark';
 
@@ -63,36 +71,31 @@ function App(): React.JSX.Element {
   };
 
   return (
-    <SafeAreaView style={backgroundStyle}>
-      <StatusBar
-        barStyle={isDarkMode ? 'light-content' : 'dark-content'}
-        backgroundColor={backgroundStyle.backgroundColor}
+    <NavigationContainer>
+    <Stack.Navigator>
+      <Stack.Screen
+        name="EntryScreen"
+        component={EntryScreen}
+        options={{headerShown: false}}
       />
-      <ScrollView
-        contentInsetAdjustmentBehavior="automatic"
-        style={backgroundStyle}>
-        <Header />
-        <View
-          style={{
-            backgroundColor: isDarkMode ? Colors.black : Colors.white,
-          }}>
-          <Section title="Step One">
-            Edit <Text style={styles.highlight}>App.tsx</Text> to change this
-            screen and then come back to see your edits.
-          </Section>
-          <Section title="See Your Changes">
-            <ReloadInstructions />
-          </Section>
-          <Section title="Debug">
-            <DebugInstructions />
-          </Section>
-          <Section title="Learn More">
-            Read the docs to discover what to do next:
-          </Section>
-          <LearnMoreLinks />
-        </View>
-      </ScrollView>
-    </SafeAreaView>
+      <Stack.Screen
+        name="HomeScreen"
+        component={HomeScreen}
+        options={{headerShown: false}}
+      />
+      <Stack.Screen
+        name="ChatScreen"
+        component={ChatScreen}
+        options={{headerShown: false}}
+      />
+      {/* <Stack.Screen
+        name="EntryScreen1"
+        component={EntryScreen}
+        options={{title: 'EntryScreen'}}
+      /> */}
+ 
+    </Stack.Navigator>
+  </NavigationContainer>
   );
 }
 
