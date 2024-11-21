@@ -30,6 +30,7 @@ import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import EntryScreen from './src/screens/EntryScreen';
 import HomeScreen from './src/screens/HomeScreen';
 import ChatScreen from './src/screens/ChatScreen';
+import { SocketProvider } from './src/sockets/SocketProvider';
 
 const Stack = createNativeStackNavigator();
 LogBox.ignoreAllLogs();
@@ -71,6 +72,9 @@ function App(): React.JSX.Element {
   };
 
   return (
+    <SocketProvider>
+
+   
     <NavigationContainer>
     <Stack.Navigator>
       <Stack.Screen
@@ -96,6 +100,7 @@ function App(): React.JSX.Element {
  
     </Stack.Navigator>
   </NavigationContainer>
+  </SocketProvider>
   );
 }
 

@@ -27,6 +27,9 @@ const initialState = {
   appIsUnderMaintenance: false,
 
   adminInfo: {},
+  chatMessages: [],
+  staffEmail: null,
+  groupId: null,
 };
 
 export const FILTER_ATTRIBUTES = {
@@ -42,6 +45,15 @@ export const initSlice = createSlice({
     setAdminInfo: (state, action) => {
       state.adminInfo = action.payload;
     },
+    setStaffEmail: (state, action) => {
+      state.staffEmail = action.payload;
+    },
+    setStaffGroupId: (state, action) => {
+      state.groupId = action.payload;
+    },
+    addMessage: (state, action) => {
+      state.chatMessages = [...action.payload, ...state.chatMessages];
+    },
     setUpdatedTrainer: (state, action) => {
       // Update state
       state.myTrainerDetails = action.payload;
@@ -50,8 +62,10 @@ export const initSlice = createSlice({
   extraReducers: builder => {
     builder.addCase('LOGOUT', state => {
       state.myTrainerDetails = {};
-      state.initCustomer = {};
-      state.initialCompany = {};
+      state.adminInfo = {};
+      state.chatMessages = [];
+      state.staffEmail = null;
+      state.groupId = null;
     });
 
     builder.addCase(getInitialInfo.fulfilled, (state, action) => {
@@ -60,6 +74,7 @@ export const initSlice = createSlice({
   },
 });
 
-export const {setAdminInfo} = initSlice.actions;
+export const {setAdminInfo, addMessage, setStaffEmail, setStaffGroupId} =
+  initSlice.actions;
 
 export default initSlice.reducer;

@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useEffect, useState} from 'react';
 import {
   View,
   StyleSheet,
@@ -12,14 +12,36 @@ import {
 } from 'react-native';
 import {getInitialInfo} from '../services/thunkApi';
 import {useDispatch} from 'react-redux';
-import {setAdminInfo} from '../redux/slices/initSlice';
+import {
+  setAdminInfo,
+  setStaffEmail,
+  setStaffGroupId,
+} from '../redux/slices/initSlice';
+import {getValue, keyNames, setValue} from '../utils/Storage';
 
 const EntryScreen = ({navigation, route}) => {
   // State hooks for email and unique ID
-  const [email, setEmail] = useState('giannisfragoulis21@gmail.com');
-  const [uniqueId, setUniqueId] = useState('prosbash_se_arxeia33');
+  const [email, setEmail] = useState('');
+  const [uniqueId, setUniqueId] = useState('');
   // Submit Handler
   const dispatch = useDispatch();
+
+  const readStorage = async () => {
+    const email = await getValue(keyNames.email);
+    const groupId = await getValue(keyNames.groupId);
+    if (email) {
+      setEmail(email);
+      setUniqueId(groupId);
+    }
+  };
+  useEffect(() => {
+    readStorage();
+  }, []);
+
+  const writeStorage = async () => {
+    setValue(keyNames.email, email);
+    setValue(keyNames.groupId, uniqueId);
+  };
   const handleSubmit = () => {
     if (!email || !uniqueId) {
       Alert.alert('Προσοχή', 'Συμπλήρωσε όλα τα στοιχεία!');
@@ -33,8 +55,10 @@ const EntryScreen = ({navigation, route}) => {
       .unwrap()
       .then(response => {
         dispatch(setAdminInfo(response.adminInfo));
-        console.log('Initial Info:', response);
+        dispatch(setStaffEmail(email));
+        dispatch(setStaffGroupId(uniqueId));
 
+        writeStorage();
         navigation.navigate('HomeScreen');
       })
       .catch(error => {

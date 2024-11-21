@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useCallback, useState} from 'react';
 import {
   View,
   StyleSheet,
@@ -9,10 +9,12 @@ import {
   Button,
   Text,
   KeyboardAvoidingView,
+  BackHandler,
 } from 'react-native';
 import {useDispatch, useSelector} from 'react-redux';
 import {getInitialInfo} from '../services/thunkApi';
 import {BASE_URL} from '../utils/Constants';
+import {useFocusEffect} from '@react-navigation/native';
 
 const HomeScreen = ({navigation, route}) => {
   // State hooks for email and unique ID
@@ -27,7 +29,15 @@ const HomeScreen = ({navigation, route}) => {
   const handleSubmit = () => {
     navigation.navigate('ChatScreen');
   };
-  console.log(`${BASE_URL}${adminAvatar}`);
+
+  useFocusEffect(
+    useCallback(() => {
+      BackHandler.addEventListener('hardwareBackPress', () => true);
+      return () =>
+        BackHandler.removeEventListener('hardwareBackPress', () => true);
+    }, []),
+  );
+
   return (
     <SafeAreaView>
       <KeyboardAvoidingView>

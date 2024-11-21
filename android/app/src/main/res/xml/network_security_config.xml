@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <!-- Allow cleartext traffic (HTTP) for localhost (or your local IP) -->
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="true">192.168.1.4</domain> <!-- Replace with your IP address -->
+        <!-- If you also want to allow HTTP traffic to localhost in release -->
+        <domain includeSubdomains="true">localhost</domain>
+    </domain-config>
+</network-security-config>

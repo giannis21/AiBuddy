@@ -15,42 +15,63 @@ import {
 import {useDispatch, useSelector} from 'react-redux';
 import 'react-native-gesture-handler';
 import {BASE_URL} from '../utils/Constants';
-import {Composer, GiftedChat, Send} from 'react-native-gifted-chat';
+import {Composer, GiftedChat, Send, isSameDay} from 'react-native-gifted-chat';
+import {addMessage} from '../redux/slices/initSlice';
+import moment from 'moment';
+import 'moment/locale/el';
+import {useSocket} from '../sockets/SocketProvider';
+import {Flow} from 'react-native-animated-spinkit';
+
 const ChatScreen = ({navigation, route}) => {
-  // State hooks for email and unique ID
-  const [messages, setMessages] = useState([]);
+  moment.locale('el');
   const {
+    chatMessages,
+    staffEmail: email,
+    groupId,
     adminInfo: {adminAvatar, adminName, adminSurname},
   } = useSelector(state => state.initReducer);
 
-  // Submit Handler
+  const socket = useSocket();
   const dispatch = useDispatch();
+
+  const [showFooter, setShowFooter] = useState();
 
   useEffect(() => {
     return () => {
       Keyboard.dismiss();
     };
   });
-  // useEffect(() => {
-  //   setMessages([
-  //     {
-  //       _id: 1,
-  //       text: 'Hello developer',
-  //       createdAt: new Date(),
-  //       user: {
-  //         _id: 2,
-  //         name: 'React Native',
-  //         avatar: 'https://placeimg.com/140/140/any',
-  //       },
-  //     },
-  //   ]);
-  // }, []);
 
-  const onSend = useCallback((messages = []) => {
-    setMessages(previousMessages =>
-      GiftedChat.append(previousMessages, messages),
-    );
-  }, []);
+  const onSend = useCallback(
+    (newMessage = []) => {
+      setShowFooter(true);
+
+      dispatch(addMessage(newMessage));
+      socket.emit(
+        'message-chat',
+        {
+          question: newMessage[0].text,
+          staffEmail: email,
+          groupId,
+        },
+        response => {
+          const {text} = response;
+          const serverMessage = {
+            _id: 1,
+            text: text,
+            createdAt: new Date(),
+            user: {
+              _id: 2,
+            },
+          };
+
+          dispatch(addMessage([serverMessage]));
+          setShowFooter(false);
+        },
+      );
+    },
+    [dispatch],
+  );
 
   const renderSend = useMemo(
     () => props =>
@@ -63,12 +84,6 @@ const ChatScreen = ({navigation, route}) => {
           }}
           {...props}>
           <View style={styles.sendButton}>
-            {/* <CustomIcon
-              style={{transform: [{rotate: '90deg'}]}}
-              name="arrowBack"
-              size={18}
-              color={'white'}
-            /> */}
             <Image
               style={{width: 20, height: 20, start: 1}}
               source={require('../../assets/images/send-message.png')}
@@ -80,20 +95,42 @@ const ChatScreen = ({navigation, route}) => {
     [],
   );
 
-  const renderComposer = useMemo(
-    () => props =>
-      (
-        <View style={styles.composerContainer}>
-          <Composer
-            {...props}
-            textInputStyle={[styles.input]} // Ensure the styles are applied
-          />
+  const renderTime = useCallback(props => {
+    const {currentMessage} = props;
+
+    return (
+      <Text
+        style={[
+          styles.timeText,
+          currentMessage?.user._id !== 1 && {color: 'grey', marginLeft: 7},
+        ]}>
+        {moment(currentMessage.createdAt).format('HH:mm')}{' '}
+        {/* Example: 15:30 */}
+      </Text>
+    );
+  }, []);
+  const renderDay = useCallback(props => {
+    const {currentMessage, previousMessage} = props;
+
+    // Only render the day if the current message is not on the same day as the previous message
+    if (!previousMessage || !isSameDay(currentMessage, previousMessage)) {
+      return (
+        <View style={styles.dayContainer}>
+          <Text style={styles.dayText}>
+            {moment(currentMessage.createdAt).format('ddd, D MMM YYYY')}{' '}
+          </Text>
         </View>
-      ),
-    [],
+      );
+    }
+    return null; // Don't render the day header for messages on the same day
+  }, []);
+
+  const renderChatFooter = () => (
+    <View style={styles.footerContainer}>
+      <Flow size={48} color="#4242D3" />
+    </View>
   );
 
-  console.log(`${BASE_URL}${adminAvatar}`);
   return (
     <SafeAreaView style={{flex: 1, backgroundColor: 'white'}}>
       <View
@@ -132,11 +169,14 @@ const ChatScreen = ({navigation, route}) => {
         }}
       />
       <GiftedChat
-        messages={messages}
+        renderTime={renderTime} // Custom message time
+        renderDay={renderDay} // Custom day header
+        messages={chatMessages}
         renderAvatar={null}
         renderSend={renderSend}
+        renderChatFooter={showFooter ? renderChatFooter : undefined}
         onSend={messages => onSend(messages)}
-        renderChatFooter={() => <View style={{height: 10}} />}
+        // renderChatFooter={() => <View style={{height: 10}} />}
         alwaysShowSend={true}
         user={{
           _id: 1,
@@ -149,18 +189,39 @@ const ChatScreen = ({navigation, route}) => {
 export default ChatScreen;
 
 const styles = StyleSheet.create({
+  timeText: {
+    fontSize: 12,
+    color: 'white',
+    textAlign: 'right',
+    marginRight: 5,
+    marginBottom: 2,
+  },
   buttonContainer: {
     marginTop: 20,
     width: '90%',
   },
   sendButton: {
     marginRight: 5,
-    backgroundColor: '#37BEAF',
+    //  backgroundColor: '#37BEAF',
     height: 34,
     width: 34,
     borderRadius: 50,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  footerContainer: {
+    padding: 14,
+    alignSelf: 'flex-start',
+    backgroundColor: '#f8f8f8',
+    alignItems: 'center',
+    justifyContent: 'center',
+    margin: 8,
+    borderRadius: 10,
+    borderTopColor: '#e0e0e0',
+  },
+  footerText: {
+    fontSize: 14,
+    color: '#555',
   },
   box: {
     borderRadius: 10,
@@ -200,5 +261,14 @@ const styles = StyleSheet.create({
     marginBottom: 15,
     paddingHorizontal: 10,
     fontSize: 16,
+  },
+  dayContainer: {
+    marginVertical: 10,
+    alignItems: 'center',
+  },
+  dayText: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#6B6B6B',
   },
 });
