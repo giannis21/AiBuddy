@@ -54,6 +54,12 @@ export const initSlice = createSlice({
     addMessage: (state, action) => {
       state.chatMessages = [...action.payload, ...state.chatMessages];
     },
+    updateMessage: (state, action) => {
+      const {createdAt, newMessage} = action.payload; // id of the message and the updates
+      state.chatMessages = state.chatMessages.map(message =>
+        message.createdAt === createdAt ? {...message, ...newMessage} : message,
+      );
+    },
     setUpdatedTrainer: (state, action) => {
       // Update state
       state.myTrainerDetails = action.payload;
@@ -74,7 +80,12 @@ export const initSlice = createSlice({
   },
 });
 
-export const {setAdminInfo, addMessage, setStaffEmail, setStaffGroupId} =
-  initSlice.actions;
+export const {
+  updateMessage,
+  setAdminInfo,
+  addMessage,
+  setStaffEmail,
+  setStaffGroupId,
+} = initSlice.actions;
 
 export default initSlice.reducer;

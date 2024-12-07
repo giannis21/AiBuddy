@@ -15,8 +15,14 @@ import {
 import {useDispatch, useSelector} from 'react-redux';
 import 'react-native-gesture-handler';
 import {BASE_URL} from '../utils/Constants';
-import {Composer, GiftedChat, Send, isSameDay} from 'react-native-gifted-chat';
-import {addMessage} from '../redux/slices/initSlice';
+import {
+  Bubble,
+  Composer,
+  GiftedChat,
+  Send,
+  isSameDay,
+} from 'react-native-gifted-chat';
+import {addMessage, updateMessage} from '../redux/slices/initSlice';
 import moment from 'moment';
 import 'moment/locale/el';
 import {useSocket} from '../sockets/SocketProvider';
@@ -55,10 +61,13 @@ const ChatScreen = ({navigation, route}) => {
           groupId,
         },
         response => {
-          const {text} = response;
+          const {textgpt3_5, textgpt4} = response;
           const serverMessage = {
             _id: 1,
-            text: text,
+            textgpt3_5,
+            textgpt4,
+            text: textgpt3_5,
+            defaultModel: 1, //1 for gpt3.5 , 2 for gpt4
             createdAt: new Date(),
             user: {
               _id: 2,
@@ -125,6 +134,74 @@ const ChatScreen = ({navigation, route}) => {
     return null; // Don't render the day header for messages on the same day
   }, []);
 
+  const handleButtonClick = (createdAt, model) => {
+    // Find the message and update its defaultModel
+    const messageToUpdate = chatMessages.find(
+      msg => msg.createdAt === createdAt,
+    );
+
+    console.log({messageToUpdate});
+    if (messageToUpdate) {
+      // Create the updated message
+      const updatedMessage = {
+        ...messageToUpdate,
+        defaultModel: model,
+
+        text:
+          model === 1 ? messageToUpdate.textgpt3_5 : messageToUpdate.textgpt4, // Switch text based on model
+      };
+
+      // Dispatch only the updated message
+      dispatch(
+        updateMessage({
+          createdAt: messageToUpdate.createdAt,
+          newMessage: updatedMessage,
+        }),
+      );
+    }
+  };
+
+  const renderBubble = props => {
+    const {currentMessage} = props;
+
+    // Only show the buttons for received messages
+    if (currentMessage.user._id !== 1) {
+      return (
+        <View style={{marginBottom: 10}}>
+          {/* Buttons above the bubble */}
+          <View style={{flexDirection: 'row', marginBottom: 5}}>
+            <TouchableOpacity
+              onPress={() => handleButtonClick(currentMessage.createdAt, 1)}
+              style={{
+                backgroundColor:
+                  currentMessage.defaultModel === 1 ? '#f1f0fa' : 'transparent',
+                padding: 8,
+                borderRadius: 4,
+              }}>
+              <Text style={styles.buttonText}>gpt-3.5</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={() => handleButtonClick(currentMessage.createdAt, 2)}
+              style={{
+                backgroundColor:
+                  currentMessage.defaultModel === 2 ? '#f1f0fa' : 'transparent',
+                padding: 8,
+                borderRadius: 4,
+                marginStart: 5,
+              }}>
+              <Text style={styles.buttonText}>gpt-4 mini</Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Message bubble */}
+          <Bubble {...props} />
+        </View>
+      );
+    }
+    return <Bubble {...props} />;
+  };
+
   const renderChatFooter = () => (
     <View style={styles.footerContainer}>
       <Flow size={48} color="#4242D3" />
@@ -178,6 +255,7 @@ const ChatScreen = ({navigation, route}) => {
         onSend={messages => onSend(messages)}
         // renderChatFooter={() => <View style={{height: 10}} />}
         alwaysShowSend={true}
+        renderBubble={renderBubble}
         user={{
           _id: 1,
         }}
@@ -189,6 +267,9 @@ const ChatScreen = ({navigation, route}) => {
 export default ChatScreen;
 
 const styles = StyleSheet.create({
+  buttonText: {
+    fontWeight: 'bold',
+  },
   timeText: {
     fontSize: 12,
     color: 'white',
